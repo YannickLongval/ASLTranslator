@@ -24,6 +24,7 @@ model = tf.keras.models.load_model('models/ASL_CV_model')
 cap = cv2.VideoCapture(0)
 detector = HandDetector(maxHands=1)
 offset = 20
+letters = []
 while True:
     success, img = cap.read()
     hands, img_detected = detector.findHands(cv2.flip(img, 1), flipType=False)   
@@ -37,21 +38,28 @@ while True:
         else:
             hOffset = (w - h)//2 + offset
             imgCrop = im_gray[y-hOffset:y+h+hOffset, x-offset:x+w+offset]  
-        
-        # fontScale
-        fontScale = 1
-        
-        # Red color in BGR
-        color = (0, 0, 255)
-        
-        # Line thickness of 2 px
-        thickness = 2
-   
-        # Using cv2.putText() method
-        img_detected = cv2.putText(img_detected, predict(model, imgCrop), (00, 185), cv2.FONT_HERSHEY_SIMPLEX, fontScale, 
+        predicted = predict(model, imgCrop)
+    else:
+         predicted = ""
+
+    # fontScale
+    fontScale = 1
+    
+    # Red color in BGR
+    color = (0, 0, 255)
+    
+    # Line thickness of 2 px
+    thickness = 2
+
+    # Using cv2.putText() method
+
+    img_detected = cv2.putText(img_detected, "".join(letters + [predicted]), (00, 185), cv2.FONT_HERSHEY_SIMPLEX, fontScale, 
                  color, thickness, cv2.LINE_AA, False)
         
     cv2.imshow("Image", img_detected)
     key = cv2.waitKey(1)
     if key%256 == 27:
             break
+    if key%256 == 32 and predicted != "":
+         letters.append(predicted)
+         predicted = ""
