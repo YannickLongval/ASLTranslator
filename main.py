@@ -9,7 +9,7 @@ import numpy as np
 
 def preprocess(img):
     imgProcessed = cv2.resize(img, dsize=(28, 28), interpolation=cv2.INTER_CUBIC)
-    imgProcessed = np.hstack(imgProcessed)
+    print(imgProcessed/255)
     return imgProcessed/255
 
 def predict(model, img):
