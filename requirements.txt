@@ -6,3 +6,4 @@ tensorflow
 opencv-python
 cvzone
 mediapipe
+tensorflow_text

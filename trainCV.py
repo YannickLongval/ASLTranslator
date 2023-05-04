@@ -4,8 +4,6 @@ Trains a computer vision model to detect ASL letters
 import tensorflow as tf
 import pandas as pd
 import matplotlib.pyplot as plt
-import numpy as np
-import sklearn
 
 # importing the train/test data for the model into pandas dataframes
 train_df:pd.DataFrame = pd.read_csv('data/sign_mnist_train.csv',delimiter=',',encoding='latin-1')
@@ -19,63 +17,39 @@ test_df.rename(columns={'label':'Label'},inplace = True)
 train_df = train_df.sample(frac = 1.0).reset_index(drop = True)
 test_df = test_df.sample(frac = 1.0).reset_index(drop = True)
 
-# # separate the target from the data. This is to create the tensorflow.data.Dataset
-# var_target_train, var_target_test = train_pd.pop('label'), test_pd.pop('label')
-
-# # creating the tf.data.Datasets
-# train:tf.data.Dataset = tf.data.Dataset.from_tensor_slices((train_pd.values, var_target_train.values))
-# test:tf.data.Dataset = tf.data.Dataset.from_tensor_slices((test_pd.values, var_target_test.values))
-
-
-# def normalize_img(image, label):
-#   """Normalizes images: `uint8` -> `float32`."""
-#   return tf.cast(image, tf.float32) / 255., label
-
-# train = train.map(normalize_img, num_parallel_calls=tf.data.AUTOTUNE)
-# test = test.map(normalize_img, num_parallel_calls=tf.data.AUTOTUNE)
-# train = train.cache()
-
-# # setting buffer and batch sizes based on amount of data
-# BUFFER_SIZE:int = 1000
-# BATCH_SIZE:int = 128
-
-# # shuffle, and batch data
-# train = train.shuffle(BUFFER_SIZE).batch(BATCH_SIZE).prefetch(tf.data.AUTOTUNE)
-# test = test.batch(BATCH_SIZE).prefetch(tf.data.AUTOTUNE)
-
-print(train_df.shape)
-
-
 train_df_original = train_df.copy()
 
-# Split into training, test and validation sets
+# Split into training, test and validation sets, such that validation is 10% of total data
 val_index = int(train_df.shape[0]*0.1)
 
 train_df = train_df_original.iloc[val_index:]
 val_df = train_df_original.iloc[:val_index]
 
-y_train = train_df['Label']
-y_val = val_df['Label']
-y_test = test_df['Label']
+y_train = train_df.pop('Label')
+y_val = val_df.pop('Label')
+y_test = test_df.pop('Label')
 
-# Reshape the traing and test set to use them with a generator
-X_train = train_df.drop('Label',axis = 1).values.reshape(train_df.shape[0], 28, 28, 1)
-X_val = val_df.drop('Label',axis = 1).values.reshape(val_df.shape[0], 28, 28, 1)
-X_test = test_df.drop('Label',axis = 1).values.reshape(test_df.shape[0], 28, 28, 1)
+# Reshape the training and test set to use them with a generator
+X_train = train_df.values.reshape(train_df.shape[0], 28, 28, 1)
+X_val = val_df.values.reshape(val_df.shape[0], 28, 28, 1)
+X_test = test_df.values.reshape(test_df.shape[0], 28, 28, 1)
 
-# Data augmentation
+# Data augmentation, create the generator to loop through the data, in batches
 generator = tf.keras.preprocessing.image.ImageDataGenerator(rescale=1./255,
-                                                            rotation_range=10,
+                                                            rotation_range=15,
                                                             zoom_range=0.10,
-                                                            width_shift_range=0.1,
-                                                            height_shift_range=0.1,
+                                                            width_shift_range=0.05,
+                                                            height_shift_range=0.05,
                                                             shear_range=0.1,
                                                             horizontal_flip=False,
+                                                            vertical_flip=True,
                                                             fill_mode="nearest")
 
+# generate batches for training/validation data
 X_train_flow = generator.flow(X_train, y_train, batch_size=32)
 X_val_flow = generator.flow(X_val, y_val, batch_size=32)
 
+# creating CNN model to predict ASL character from 28x28 pixel image
 model = tf.keras.models.Sequential([tf.keras.layers.Conv2D(filters=32,  kernel_size=(3,3), activation="relu", input_shape=(28,28,1)),
                     tf.keras.layers.MaxPool2D(2,2, padding='same'),
                     
@@ -123,13 +97,3 @@ ax[0].set_ylim(0,1.1)
 pd.DataFrame(history.history)[['loss','val_loss']].plot(ax=ax[1])
 ax[1].set_title("Loss", fontsize = 15)
 plt.show()
-
-# Predict the label of the test_images
-pred = model.predict(X_test)
-pred = np.argmax(pred,axis=1)
-
-# Get the accuracy score
-acc = sklearn.metrics.accuracy_score(y_test,pred)
-
-# Display the results
-print(f'## {acc*100:.2f}% accuracy on the test set')
