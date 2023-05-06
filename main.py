@@ -9,9 +9,18 @@ import numpy as np
 import os
 import openai
 
+# set the OpenAI API key from the environment variables (see setup instructions)
 openai.api_key = os.environ["OPENAI_API_KEY"]
 
-def get_completion(text, model="gpt-3.5-turbo"):
+"""Translates the given text using OpenAI's GPT model
+
+Args:
+    text (string): the text to be translated
+    model (string): which gpt model to use
+
+Returns a list of 2 strings, the french and spanish translations of <text>
+"""
+def translate_text(text:str, model="gpt-3.5-turbo") -> list[str]:
     prompt = f"""
     Translate the English text delimited by triple backticks into the following languages: French, Spanish. \
     Return the result as comma-separated values with 2 values, where the first value is the French translation, the second value is \
@@ -24,7 +33,8 @@ def get_completion(text, model="gpt-3.5-turbo"):
         messages=messages,
         temperature=0, # this is the degree of randomness of the model's output
     )
-    return response.choices[0].message["content"]
+    # process the returned string from the GPT model into a list
+    return [s.strip() for s in (response.choices[0].message["content"]).split(",")]
 
 """Process the image to be passed into the model
 
@@ -70,6 +80,7 @@ translations = []
 
 while True:
     success, img = cap.read()
+    # search for hands in img
     hands, img_detected = detector.findHands(cv2.flip(img, 1), flipType=False)   
     if hands and not translated:
         # capture a grayscale, square image around the detected hand to be used for the model
@@ -89,17 +100,17 @@ while True:
     # fontScale
     fontScale = 1
     
-    # Red color in BGR
+    # red color in BGR
     color = (0, 0, 255)
     
-    # Line thickness of 2 px
+    # line thickness of 2 px
     thickness = 2
 
-    # Using cv2.putText() method
-
+    # using cv2.putText() method
     img_detected = cv2.putText(img_detected, "".join(letters + [predicted]), (20, 100), cv2.FONT_HERSHEY_SIMPLEX, fontScale, 
                  color, thickness, cv2.LINE_AA, False)
     
+    # putting text for translation if they exist
     if translated and translations != []:
         img_detected = cv2.putText(img_detected, "FR: " + translations[0], (20, 250), cv2.FONT_HERSHEY_SIMPLEX, fontScale, 
                  color, thickness, cv2.LINE_AA, False)
@@ -120,5 +131,5 @@ while True:
         letters.append(predicted)
         predicted = ""
     if key%256 == 13: # enter key is pressed
-        translations = [s.strip() for s in get_completion("".join(letters)).split(",")]
+        translations = translate_text("".join(letters))
         translated = True
