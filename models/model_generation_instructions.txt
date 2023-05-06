@@ -1,0 +1,2 @@
+To create the model for the financial news sentiment analysis, run train.py
+Once complete, this folder will populate with the model info, which can be loaded into main.py
