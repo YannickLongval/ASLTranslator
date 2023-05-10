@@ -112,9 +112,9 @@ while True:
     
     # putting text for translation if they exist
     if translated and translations != []:
-        img_detected = cv2.putText(img_detected, "FR: " + translations[0], (20, 250), cv2.FONT_HERSHEY_SIMPLEX, fontScale, 
+        img_detected = cv2.putText(img_detected, "FR: " + translations[0].upper(), (20, 250), cv2.FONT_HERSHEY_SIMPLEX, fontScale, 
                  color, thickness, cv2.LINE_AA, False)
-        img_detected = cv2.putText(img_detected, "ES: " + translations[1], (20, 350), cv2.FONT_HERSHEY_SIMPLEX, fontScale, 
+        img_detected = cv2.putText(img_detected, "ES: " + translations[1].upper(), (20, 350), cv2.FONT_HERSHEY_SIMPLEX, fontScale, 
                  color, thickness, cv2.LINE_AA, False)
         
     cv2.imshow("ASLTranslator", img_detected)
